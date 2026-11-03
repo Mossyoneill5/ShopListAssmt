@@ -45,7 +45,7 @@ class CategoryFragment : Fragment() {
         binding.recyclerView.adapter = adapter
 
         viewModel.categories.observe(viewLifecycleOwner) { list ->
-            val cat = list.find { it.id == categoryId }
+            val cat = viewModel.getCategoryById(categoryId)
             if (cat != null) {
                 android.util.Log.d(
                     "ShopFragment",

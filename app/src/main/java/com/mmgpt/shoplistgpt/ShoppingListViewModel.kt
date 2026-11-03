@@ -34,6 +34,10 @@ class ShoppingListViewModel(application: Application) : AndroidViewModel(applica
      * containing a heading and its items.
      */
     val categories: LiveData<List<ShoppingCategory>> = _categories
+    fun getCategoryById(categoryId: Long): ShoppingCategory? {
+        return _categories.value.orEmpty().find { it.id == categoryId }
+    }
+
 
     fun setPlanDate(date: LocalDate?) {
         _planDate.value = date

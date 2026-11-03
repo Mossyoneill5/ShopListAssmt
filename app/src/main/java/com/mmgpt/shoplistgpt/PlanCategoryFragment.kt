@@ -93,7 +93,7 @@ class PlanCategoryFragment : Fragment() {
 
         viewModel.categories.observe(viewLifecycleOwner) { list ->
             val index = currentCategoryIndex()
-            val cat = list.getOrNull(index)
+            val cat = viewModel.getCategoryById(categoryId)
             if (cat != null) {
                 binding.tvHeading.text = cat.heading
                 binding.tvCount.text = ""
