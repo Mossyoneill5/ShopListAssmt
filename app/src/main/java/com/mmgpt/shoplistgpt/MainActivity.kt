@@ -92,6 +92,18 @@ class MainActivity : AppCompatActivity() {
         binding.viewPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
         binding.viewPager.adapter = pagerAdapter
 
+        binding.viewPager.registerOnPageChangeCallback(
+            object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    super.onPageSelected(position)
+                    android.util.Log.d(
+                        "CategoryNavigation",
+                        "ACTUAL selected page=$position"
+                    )
+                }
+            }
+        )
+
         val pagerRecyclerView = binding.viewPager.getChildAt(0) as RecyclerView
         pagerRecyclerView.setOnTouchListener { _, event ->
             when (event.action) {
@@ -119,13 +131,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        var lastSize = viewModel.categories.value?.size ?: 0
-        viewModel.categories.observe(this) { categories ->
-            val newSize = categories.size
-            if (newSize != lastSize) {
-                pagerAdapter.notifyDataSetChanged()
-                lastSize = newSize
-            }
+        viewModel.categories.observe(this) {
+            pagerAdapter.notifyDataSetChanged()
         }
 
         startBinding.btnShop.setOnClickListener { showShopping() }
@@ -338,6 +345,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showShopping() {
+        pagerAdapter = CategoryPagerAdapter(this, viewModel, false)
+        binding.viewPager.adapter = pagerAdapter
+        binding.viewPager.setCurrentItem(0, false)
         binding.startPage.root.visibility = View.GONE
         binding.viewPager.visibility = View.VISIBLE
         val date = viewModel.planDate.value
@@ -351,6 +361,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPlanning() {
+        viewModel.categories.value.orEmpty().forEach { category ->
+            android.util.Log.d(
+                "ShopDebug",
+                "Category=${category.heading}, " +
+                        "Items=${category.items.map { it.name }}"
+            )
+        }
         val planned = viewModel.categories.value?.map { cat ->
             cat.copy(items = cat.items.map { it.copy(isStruck = true) })
         } ?: return

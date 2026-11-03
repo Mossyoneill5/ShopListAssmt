@@ -13,13 +13,13 @@ import com.mmgpt.shoplistgpt.databinding.FragmentCategoryBinding
 class CategoryFragment : Fragment() {
 
     private val viewModel: ShoppingListViewModel by activityViewModels()
-    private var index: Int = 0
+    private var categoryId: Long = -1L
     private var _binding: FragmentCategoryBinding? = null
     private val binding get() = _binding!!
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        index = arguments?.getInt(ARG_INDEX) ?: 0
+        categoryId = requireArguments().getLong(ARG_CATEGORY_ID)
     }
 
     override fun onCreateView(
@@ -45,8 +45,14 @@ class CategoryFragment : Fragment() {
         binding.recyclerView.adapter = adapter
 
         viewModel.categories.observe(viewLifecycleOwner) { list ->
-            val cat = list.getOrNull(index)
+            val cat = list.find { it.id == categoryId }
             if (cat != null) {
+                android.util.Log.d(
+                    "ShopFragment",
+                    "Fragment categoryId=$categoryId, " +
+                            "Showing=${cat.heading}, " +
+                            "Items=${cat.items.map { it.name }}"
+                )
                 binding.tvHeading.text = cat.heading
                 binding.tvCount.text = "${cat.remainingCount}/${cat.totalCount}"
                 adapter.submitList(cat.items)
@@ -59,12 +65,17 @@ class CategoryFragment : Fragment() {
         _binding = null
     }
 
+
     companion object {
-        private const val ARG_INDEX = "index"
-        fun newInstance(index: Int): CategoryFragment {
-            val fragment = CategoryFragment()
-            fragment.arguments = Bundle().apply { putInt(ARG_INDEX, index) }
-            return fragment
+        private const val ARG_CATEGORY_ID = "category_id"
+
+        fun newInstance(categoryId: Long): CategoryFragment {
+            return CategoryFragment().apply {
+                arguments = Bundle().apply {
+                    putLong(ARG_CATEGORY_ID, categoryId)
+                }
+            }
         }
     }
 }
+

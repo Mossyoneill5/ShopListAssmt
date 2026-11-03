@@ -17,13 +17,18 @@ import com.mmgpt.shoplistgpt.ShoppingItem
 class PlanCategoryFragment : Fragment() {
 
     private val viewModel: ShoppingListViewModel by activityViewModels()
-    private var index: Int = 0
+    private var categoryId: Long = -1L
+
+    private fun currentCategoryIndex(): Int =
+        viewModel.categories.value.orEmpty()
+            .indexOfFirst { it.id == categoryId }
+
     private var _binding: FragmentCategoryBinding? = null
     private val binding get() = _binding!!
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        index = arguments?.getInt(ARG_INDEX) ?: 0
+        categoryId = requireArguments().getLong(ARG_CATEGORY_ID)
     }
 
     override fun onCreateView(
@@ -53,7 +58,9 @@ class PlanCategoryFragment : Fragment() {
                 val itemFrom = adapter.currentList.getOrNull(from)
                 val itemTo = adapter.currentList.getOrNull(to)
                 if (itemFrom?.isPlaceholder == true || itemTo?.isPlaceholder == true) return false
-                viewModel.reorderItem(index, from - 1, to - 1)
+                val categoryIndex = currentCategoryIndex()
+                if (categoryIndex == -1) return false
+                viewModel.reorderItem(categoryIndex, from - 1, to - 1)
                 adapter.moveItem(from, to)
                 return true
             }
@@ -75,13 +82,17 @@ class PlanCategoryFragment : Fragment() {
             mode = ItemAdapter.Mode.PLAN,
             dragStart = { vh -> dragHelper.startDrag(vh) },
             onAdd = { position, name ->
-                viewModel.addItem(index, position - 1, name)
+                val categoryIndex = currentCategoryIndex()
+                if (categoryIndex != -1) {
+                    viewModel.addItem(categoryIndex, position - 1, name)
+                }
             }
         )
         binding.recyclerView.adapter = adapter
         dragHelper.attachToRecyclerView(binding.recyclerView)
 
         viewModel.categories.observe(viewLifecycleOwner) { list ->
+            val index = currentCategoryIndex()
             val cat = list.getOrNull(index)
             if (cat != null) {
                 binding.tvHeading.text = cat.heading
@@ -91,7 +102,10 @@ class PlanCategoryFragment : Fragment() {
                 binding.chkSelectAll.setOnCheckedChangeListener(null)
                 binding.chkSelectAll.isChecked = allChecked
                 binding.chkSelectAll.setOnCheckedChangeListener { _, isChecked ->
-                    viewModel.setAllChecked(index, isChecked)
+                    val categoryIndex = currentCategoryIndex()
+                    if (categoryIndex != -1) {
+                        viewModel.setAllChecked(categoryIndex, isChecked)
+                    }
                 }
 
                 val items = mutableListOf<ShoppingItem>()
@@ -123,12 +137,16 @@ class PlanCategoryFragment : Fragment() {
         _binding = null
     }
 
+
     companion object {
-        private const val ARG_INDEX = "index"
-        fun newInstance(index: Int): PlanCategoryFragment {
-            val fragment = PlanCategoryFragment()
-            fragment.arguments = Bundle().apply { putInt(ARG_INDEX, index) }
-            return fragment
+        private const val ARG_CATEGORY_ID = "category_id"
+
+        fun newInstance(categoryId: Long): PlanCategoryFragment {
+            return PlanCategoryFragment().apply {
+                arguments = Bundle().apply {
+                    putLong(ARG_CATEGORY_ID, categoryId)
+                }
+            }
         }
     }
 }
